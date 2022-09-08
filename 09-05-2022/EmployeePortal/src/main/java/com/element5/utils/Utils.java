@@ -107,7 +107,7 @@ public class Utils {
      */
     public boolean validateEmail(String email) {
 
-        String regex = "^[A-Za-z0-9+_.-]+@(.+)+(com)$";
+        String regex = "^[A-Za-z0-9+_.-]+@[gmail](.+)+(com)$";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher  = pattern.matcher(email); 
         boolean checkEmail = matcher.matches();

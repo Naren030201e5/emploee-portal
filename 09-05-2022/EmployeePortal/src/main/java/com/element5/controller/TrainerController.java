@@ -52,6 +52,7 @@ public class TrainerController {
                          .append("4) Show Specific Trainer Details \n")
                          .append("5) Update Trainer Details \n")
                          .append("6) Assign Trainees To Trainer \n")
+                         .append("7) Unassign Trainees for Trainer \n")
                          .append("12) Exit");     
             System.out.println(stringBuilder);
             String menu = scanner.next();
@@ -82,8 +83,12 @@ public class TrainerController {
                     assignTraineesToTrainer();
                     displayMenu();
                     break;
+                case 7:
+                    unassignTraineesForTrainer();
+                    displayMenu();
+                    break;
                 case 12:
-                    logger.info("Thank ypu for using employee portal");
+                    logger.info("Thank you for using employee portal");
                     break;
                 default:
                     logger.error("Please enter a valid option");
@@ -281,7 +286,7 @@ public class TrainerController {
                 System.out.println(trainerDetails);
                 List<Trainee> trainee = trainer.getTraineeDetails();
 
-                if (trainee.size() != 0){
+                if (trainee.size() != 0 && trainee != null){
                     System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Trainee Details~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
                     for(int i=0; i<trainee.size(); i++) {
@@ -491,35 +496,86 @@ public class TrainerController {
     public static void assignTraineesToTrainer() {
 
         List<Trainee> trainee = traineeService.showTraineesDetails();
+        displayTrainers();
         System.out.println("enter Trainer id");
         int trainerId = scanner.nextInt();
         Trainer trainer = trainerService.showTrainerDetailsById(trainerId);
 
         if (trainer != null) {
-            HashSet<String> message = new HashSet<>();
             traineeController.displayTrainees();
-            System.out.println("enter Trainee id (example 1,2,3)");
-            String[] traineeId = scanner.next().split(",");
+            boolean isAssignCompleted = false;
 
-            for (int i=0; i < traineeId.length; i++) {
-                int id = Integer.valueOf(traineeId[i]);
+            while (!isAssignCompleted) {
+                System.out.println("enter Trainee id");
+                int traineeId = scanner.nextInt();
 
-                for(int j=0; j<trainee.size(); j++) {
+                if (traineeId <= trainee.size()) {
+                    trainer.getTraineeDetails().add(trainee.get(traineeId-1));
+                    logger.info("{}", trainerService.changeTrainerDetailsById(trainerId, trainer));
+                    System.out.println("do you want to add another trainee 1)yes 2) no");
+                    int option = scanner.nextInt();
 
-                    if(trainee.get(j).getId() == id) {
-                        trainer.getTraineeDetails().add(trainee.get(j));
-                    } else {
-                        message.add(String.format("Trainee %s is not available ", traineeId[i]));
+                    if (option == 2) {
+                        isAssignCompleted = true;
+                    }
+                } else {
+                    logger.info(String.format("Trainee %d is not available ", traineeId));
+                    System.out.println("do you want to add another trainee 1)yes 2) no");
+                    int option = scanner.nextInt();
+                    if (option == 2) {
+                        isAssignCompleted = true;
                     }
                 }
             }
-
-            if(message.size() != 0) {
-                message.forEach(info-> logger.info("{}", info));
-            }
-            trainerService.changeTrainerDetailsById(trainerId, trainer);
         } else {
             logger.info("Trainer not available");
+        }
+    }
+
+    public static void unassignTraineesForTrainer() {
+        try {
+            displayTrainers();
+            System.out.println("Enter the Trainer Id");
+            String trId = scanner.next();
+            int trainerId = Integer.valueOf(trId);
+            Trainer trainer = trainerService.showTrainerDetailsById(trainerId);
+
+            if (trainer != null) {
+                List<Trainee> trainee = trainer.getTraineeDetails();
+                trainee.forEach(trainees->
+                               {
+                                   System.out.println(trainees.getName());
+                                   System.out.println(trainees.getId());
+                               });
+                System.out.println("Enter trainee id ex(1,2,3)");
+                String[] traineeId = scanner.next().split(",");
+       
+                for(int i = 0; i<traineeId.length; i++) {
+                    boolean traineeUnassigned = false;
+                    int id = Integer.valueOf(traineeId[i]);
+                
+                    for(int j = 0; j<trainee.size(); j++) {
+
+                        if(!traineeUnassigned) {
+
+                            if(trainee.get(j).getId() == id) {
+                                trainee.remove(j);
+                                traineeUnassigned = true;
+                            }
+                        }
+                    }
+                
+                    if (!traineeUnassigned) {
+                        logger.info(String.format("Trainee %d not Available", id));
+                    } 
+                }
+                logger.info("{}", trainerService.changeTrainerDetailsById(trainerId, trainer));            
+            } else {
+                logger.info("Trainer id Invalid or not available");
+            }
+        } catch (NumberFormatException e) {
+            logger.error("Invalid Id entered");
+            unassignTraineesForTrainer();
         }
     }
 }

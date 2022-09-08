@@ -1,5 +1,3 @@
-package com.element5;
-
 import java.util.Scanner;
 
 import org.slf4j.Logger;
